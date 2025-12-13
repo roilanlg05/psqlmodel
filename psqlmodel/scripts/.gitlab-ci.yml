@@ -1,0 +1,48 @@
+stages:
+  - check
+  - migrate
+
+variables:
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: test_db
+
+check-migrations:
+  stage: check
+  image: python:3.11
+  services:
+    - postgres:15
+  variables:
+    DB_HOST: postgres
+    DB_PORT: 5432
+    DB_USER: postgres
+    DB_PASSWORD: postgres
+    DB_NAME: test_db
+  script:
+    - pip install psycopg
+    - pip install -e .
+    - python -m psqlmodel migrate check
+    - python -m psqlmodel migrate verify
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+apply-migrations:
+  stage: migrate
+  image: python:3.11
+  variables:
+    DB_HOST: $PROD_DB_HOST
+    DB_PORT: $PROD_DB_PORT
+    DB_USER: $PROD_DB_USER
+    DB_PASSWORD: $PROD_DB_PASSWORD
+    DB_NAME: $PROD_DB_NAME
+  script:
+    - pip install psycopg
+    - pip install -e .
+    - python -m psqlmodel migrate upgrade
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  when: manual
+  environment:
+    name: production

@@ -1,0 +1,13 @@
+.venv
+__pycache__
+
+.pytyped
+
+migrations
+.migrations
+
+.pytest_cache
+
+examples
+.git
+.vscode

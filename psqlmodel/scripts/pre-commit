@@ -1,0 +1,28 @@
+#!/bin/bash
+# PSQLModel Migration Pre-commit Hook
+# Install: cp pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+echo "🔍 Checking for pending migrations..."
+
+# Check if there are schema changes not in migrations
+python -m psqlmodel migrate check 2>/dev/null
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 1 ]; then
+    echo "❌ Schema changes detected! Please run:"
+    echo "   python -m psqlmodel migrate autogenerate \"description\""
+    exit 1
+fi
+
+# Verify migration file integrity
+echo "🔍 Verifying migration integrity..."
+python -m psqlmodel migrate verify 2>/dev/null
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 1 ]; then
+    echo "❌ Migration files have been modified after apply!"
+    exit 1
+fi
+
+echo "✅ All migration checks passed"
+exit 0
